@@ -1,0 +1,103 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iqoptionapi"
+version = "0.1.0"
+description = "Unofficial Python wrapper for the IQ Option trading platform — sync client plus an asyncio-based market-data client."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "victalejo" }]
+keywords = ["iqoption", "trading", "binary-options", "websocket", "asyncio"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "requests>=2.28",
+    "websocket-client>=1.5",
+]
+
+[project.optional-dependencies]
+aio = [
+    "aiohttp>=3.9",
+    "websockets>=12",
+]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+    "mypy>=1.8",
+    "aiohttp>=3.9",
+    "websockets>=12",
+]
+
+[project.urls]
+Repository = "https://github.com/victalejo/iqoptionapi"
+Issues = "https://github.com/victalejo/iqoptionapi/issues"
+
+# The package is laid out with its sources at the repo root (the repo
+# directory itself is the "iqoptionapi" package: `__init__.py` sits next
+# to api.py / stable_api.py / constants.py / ...). This is unusual but
+# kept for compatibility with existing forks and consumers.
+[tool.setuptools]
+packages = [
+    "iqoptionapi",
+    "iqoptionapi.aio",
+    "iqoptionapi.http",
+    "iqoptionapi.ws",
+    "iqoptionapi.ws.chanels",
+    "iqoptionapi.ws.objects",
+]
+package-dir = { "iqoptionapi" = "." }
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# E722: bare except    BLE001: blind Exception catch
+# Enforce in the new aio/ subpackage and tests; the legacy sync code is
+# excluded because it uses many bare-excepts intentionally tolerant of
+# protocol drift.
+select = ["E", "F", "W", "I", "B", "UP", "BLE", "ASYNC"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"api.py" = ["E722", "BLE001", "E501", "F401", "F403", "F405"]
+"stable_api.py" = ["E722", "BLE001", "E501"]
+"ws/**" = ["E722", "BLE001", "E501", "F401", "F403", "F405"]
+"http/**" = ["E722", "BLE001", "E501"]
+"constants.py" = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+# --import-mode=importlib avoids prepending the repo root to sys.path,
+# which is essential here because the repo root contains an `http/`
+# directory that would otherwise shadow stdlib `http` (aiohttp imports
+# `from http import HTTPStatus`). Combined with `pythonpath = [".."]`,
+# this lets `import iqoptionapi` resolve to this repo via its parent dir.
+addopts = ["--import-mode=importlib"]
+pythonpath = [".."]
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+# The legacy sync code is intentionally not typed — only check the new
+# async subpackage.
+files = ["aio"]
